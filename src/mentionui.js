@@ -91,7 +91,7 @@ export default class MentionUI extends Plugin {
 					this._mentionsView.selectPrevious();
 				}
 
-				if ( data.keyCode == keyCodes.enter || data.keyCode == keyCodes.tab || data.keyCode == keyCodes.space ) {
+				if ( data.keyCode == keyCodes.enter || data.keyCode == keyCodes.tab /*|| data.keyCode == keyCodes.space*/ ) {
 					this._mentionsView.executeSelected();
 				}
 
@@ -106,7 +106,9 @@ export default class MentionUI extends Plugin {
 			emitter: this._mentionsView,
 			activator: () => this._isUIVisible,
 			contextElements: [ this._balloon.view.element ],
-			callback: () => this._hideUIAndRemoveMarker()
+			callback: () => {
+				this._hideUIAndRemoveMarker();
+			}
 		} );
 
 		const feeds = editor.config.get( 'mention.feeds' );
@@ -289,7 +291,7 @@ export default class MentionUI extends Plugin {
 
 			const nodeBefore = focus.nodeBefore;
 
-			if ( hasMention || nodeBefore && nodeBefore.is( 'text' ) && nodeBefore.hasAttribute( 'mention' ) ) {
+			if ( hasMention || ( nodeBefore && nodeBefore.is( 'text' ) && nodeBefore.hasAttribute( 'mention' ) ) ) {
 				this._hideUIAndRemoveMarker();
 
 				return;
@@ -301,6 +303,12 @@ export default class MentionUI extends Plugin {
 			// Create a marker range.
 			const start = focus.getShiftedBy( -matchedTextLength );
 			const end = focus.getShiftedBy( -feedText.length );
+
+			if ( start.nodeAfter && start.nodeAfter.is( 'text' ) && start.nodeAfter.hasAttribute( 'mention' ) ) {
+				this._hideUIAndRemoveMarker();
+
+				return;
+			}
 
 			const markerRange = editor.model.createRange( start, end );
 
@@ -546,7 +554,7 @@ export function createRegExp( marker, minimumCharacters ) {
 	//
 	// The pattern matches up to the caret (end of string switch - $).
 	//               (0:      opening sequence       )(1:  marker   )(2:                typed mention                 )$
-	const pattern = `(?:^|[ ${ openAfterCharacters }])([${ marker }])([_${ mentionCharacters }]${ numberOfCharacters })$`;
+	const pattern = `(?:^|[ ${ openAfterCharacters }])([${ marker }])([^ ][-_ ,;:'"?!${ mentionCharacters }]${ numberOfCharacters })$`;
 
 	return new RegExp( pattern, 'u' );
 }
@@ -603,7 +611,7 @@ function isHandledKey( keyCode ) {
 		keyCodes.arrowdown,
 		keyCodes.enter,
 		keyCodes.tab,
-		keyCodes.space,
+		// keyCodes.space,
 		keyCodes.esc
 	];
 
